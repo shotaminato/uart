@@ -1,0 +1,15 @@
+*.bak
+db
+incremental_db
+output_files
+.vscode
+.DS_Store
+.history
+
+simulation/questa/uart2seg.sft
+simulation/questa/uart2seg.svo
+uart2seg.sdc
+uart2seg.qws
+uart2seg.qsf
+uart2seg.qpf
+c5_pin_model_dump.txt
