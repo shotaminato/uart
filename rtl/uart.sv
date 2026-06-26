@@ -56,8 +56,8 @@ module uart #(
     rx_state_t rx_state;
     rx_state_t rx_state_next;
 
-    logic rx_start_bit_received;
-    assign rx_start_bit_received = rx_sampled == 0;
+    logic rx_start_bit_detected;
+    assign rx_start_bit_detected = rx_sampled == 0;
 
 
     logic [$clog2(OVERSAMPLING_FACTOR * (DATA_WIDTH + 2))-1:0] rx_sample_count;
@@ -69,17 +69,24 @@ module uart #(
     assign last_sample_received = rx_sample_count == (OVERSAMPLING_FACTOR * (DATA_WIDTH + 2) - 1);
 
     assign rx_state_next = 
-        (rx_state == IDLE       ) ? ((rx_bit_valid & rx_start_bit_received) ? START       : IDLE       ) :
-        (rx_state == START      ) ? ((rx_bit_valid & rx_start_bit_received) ? RECEIVE_BIT : IDLE       ) :
-        (rx_state == RECEIVE_BIT) ? ((rx_bit_valid & last_sample_received ) ? STOP        : RECEIVE_BIT) :
-        (rx_state == STOP       ) ? ((rx_bit_valid                        ) ? IDLE        : STOP       ) :
+        (rx_state == IDLE       ) ? ((sample_valid & rx_start_bit_detected) ? START       : IDLE       ) :
+        (rx_state == START      ) ? ((sampke_valid & rx_start_bit_detected) ? RECEIVE_BIT : IDLE       ) :
+        (rx_state == RECEIVE_BIT) ? ((sample_valid & last_sample_received ) ? STOP        : RECEIVE_BIT) :
+        (rx_state == STOP       ) ? ((sample_valid                        ) ? IDLE        : STOP       ) :
         IDLE;
     `DFF(rx_state, rx_state_next, sample_valid)
 
-    logic [(DATA_WIDTH + 2) - 1:0][2:0] rx_bit_received;
+    logic                 [2:0] start_bit;
+    logic                 [2:0] end_bit;
+    logic [DATA_WIDTH-1:0][2:0] data_bit;
+
+    `DFF(start_bit[0], rx, (rx_sample_count == (0 + OVERSAMPLING_FACTOR / 2 - 1)) & sample_valid);
+    `DFF(start_bit[1], rx, (rx_sample_count == (0 + OVERSAMPLING_FACTOR / 2    )) & sample_valid);
+    `DFF(start_bit[2], rx, (rx_sample_count == (0 + OVERSAMPLING_FACTOR / 2 + 1)) & sample_valid);
 
     genvar g_bit;
     for (g_bit = 0; g_bit < DATA_WIDTH + 2; g_bit++) begin : gen_rx_bit_received
+        
         
         
     end
