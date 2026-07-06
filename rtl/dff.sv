@@ -21,4 +21,12 @@ endmodule
 
 
 `define DFF(__q, __d, __en) \
-    uart_dff #(.WIDTH($bits(__d))) dff_inst_``__q (.i_clk(i_clk), .i_rst_n(i_rst_n), .i_d(__d), .i_en(__en), .o_q(__q));
+    always_ff @(posedge i_clk or negedge i_rst_n) begin \
+        if (!i_rst_n) begin \
+            {__q} <= 0; \
+        end else begin \
+            if ({__en}) begin \
+                {__q} <= {__d}; \
+            end \
+        end \
+    end

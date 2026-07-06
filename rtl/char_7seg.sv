@@ -101,6 +101,6 @@ module char_7seg #(
             ? SEG_LUT[char_captured - 8'h30]
             : 7'b0000110; // "E"rror
 
-    `DFF(o_seg, seg_encoded, i_valid)
+    `DFF(o_seg, seg_encoded, i_clk)
 
 endmodule
