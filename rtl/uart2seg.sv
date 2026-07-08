@@ -2,7 +2,7 @@ module uart2seg (
     input  logic i_clk,
     input  logic i_rst_n,
     input  logic i_rx,
-    // output logic o_tx,
+    output logic o_tx,
     output logic [6:0] o_seg
 );
 
@@ -10,6 +10,8 @@ module uart2seg (
     logic rst_n_sync;
     logic rx_meta;
     logic rx_sync;
+    logic tx_meta;
+    logic tx_sync;
     logic       o_rvalid;
     logic [7:0] o_rdata;
     logic       i_rready;
@@ -34,14 +36,32 @@ module uart2seg (
         end
     end
 
-    uart u_uart (
+    always_ff @(posedge i_clk or negedge rst_n_sync) begin
+        if (!rst_n_sync) begin
+            tx_sync <= 1'b1;
+            o_tx    <= 1'b1;
+        end else begin
+            tx_sync <= tx_meta;
+            o_tx    <= tx_sync;
+        end
+    end
+
+    uart_rx u_uart_rx (
         .i_clk(i_clk),
         .i_rst_n(rst_n_sync),
         .i_rx(rx_sync),
-        .o_tx(o_tx),
         .o_rdata(o_rdata),
         .o_rvalid(o_rvalid),
         .i_rready(i_rready)
+    );
+
+    uart_tx u_uart_tx (
+        .i_clk(i_clk),
+        .i_rst_n(rst_n_sync),
+        .o_tx(tx_meta),
+        .i_wdata(o_rdata),
+        .i_wvalid(o_rvalid),
+        .o_wready()
     );
 
     char_7seg u_char_7seg (
@@ -52,23 +72,5 @@ module uart2seg (
         .o_seg(o_seg),
         .o_ready(i_rready)
     );
-
-    // logic [31:0] cycle_cnt;
-    // logic [31:0] cycle_cnt_next;
-    // assign cycle_cnt_next = cycle_cnt < 100_000_000_000 ? cycle_cnt + 1 : 0;
-    // `DFF(cycle_cnt, cycle_cnt_next, 1'b1)
-
-
-    // logic [7:0] o_rdata_next;
-
-    // assign o_rdata_next = (o_rdata < 8'h30 + 9) & (o_rdata >= 8'h30) ? o_rdata + 1 : 8'h30;
-    // assign o_rvalid = cycle_cnt % 50_000_000 == 0;
-    // `DFF(o_rdata, o_rdata_next, o_rvalid)
-
-
-    // logic [6:0] o_seg_next;
-
-    // assign o_seg_next = o_seg == 7'b0 ? 7'b0000001 : {o_seg[5:0], o_seg[6]};
-    // `DFF(o_seg, o_seg_next, cycle_cnt % 50_000_000 == 0)
 
 endmodule

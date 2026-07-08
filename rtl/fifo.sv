@@ -20,14 +20,14 @@ module fifo #(
     logic [$clog2(DEPTH)-1:0] wr_ptr_next;
     logic [$clog2(DEPTH)-1:0] rd_ptr_next;
 
-    logic [$clog2(DEPTH)-1:0] count;
-    logic [$clog2(DEPTH)-1:0] count_next;
+    logic [$clog2(DEPTH):0] count;
+    logic [$clog2(DEPTH):0] count_next;
 
     assign count_next = count + i_wvalid - (i_rready & o_rvalid);
-    `DFF(count, count_next, 1'b1)
+    `DFFR(count, count_next, 1'b1)
 
-    assign wr_ptr_next = (wr_ptr == DEPTH - 1) ? 0 : wr_ptr + 1;
-    `DFF(wr_ptr, wr_ptr_next, (i_wvalid & o_wready))
+    assign wr_ptr_next = $clog2(DEPTH)'((wr_ptr == DEPTH - 1) ? '0 : wr_ptr + 1);
+    `DFFR(wr_ptr, wr_ptr_next, (i_wvalid & o_wready))
 	 
     generate
         for (gi = 0; gi < DEPTH; gi = gi + 1) begin : gen_mem
@@ -45,7 +45,7 @@ module fifo #(
     assign o_rvalid = count > 0;
     assign o_wready = (count < DEPTH);
 
-    assign rd_ptr_next = (rd_ptr == DEPTH - 1) ? 0 : rd_ptr + 1;
-    `DFF(rd_ptr, rd_ptr_next, i_rready & o_rvalid)
+    assign rd_ptr_next = $clog2(DEPTH)'((rd_ptr == DEPTH - 1) ? '0 : rd_ptr + 1);
+    `DFFR(rd_ptr, rd_ptr_next, i_rready & o_rvalid)
 
 endmodule
