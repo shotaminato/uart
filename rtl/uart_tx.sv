@@ -28,7 +28,7 @@ module uart_tx #(
     logic rx_fifo_rready;
     logic [DATA_WIDTH-1:0] rx_fifo_rdata;
 
-    assign rx_fifo_wvalid = i_wvalid;
+    assign rx_fifo_wvalid = i_wvalid & rx_fifo_wready;
     assign rx_fifo_wdata  = i_wdata;
     assign o_wready       = rx_fifo_wready;
 
