@@ -13,7 +13,7 @@ module char_7seg #(
 
     logic [DATA_WIDTH-1:0] char_captured;
 
-    `DFFR(char_captured, i_char, i_valid)
+    `DFFR(char_captured, i_char, i_valid, i_clk, i_rst_n)
 
     // Active-low gfedcba patterns for ASCII '0'..'z' (WikiChip table, inverted)
     localparam logic [6:0] SEG_LUT [75] = '{
@@ -101,6 +101,6 @@ module char_7seg #(
             ? SEG_LUT[char_captured - 8'h30]
             : 7'b0000110; // "E"rror
 
-    `DFFR(o_seg, seg_encoded, i_clk)
+    `DFFR(o_seg, seg_encoded, 1'b1, i_clk, i_rst_n)
 
 endmodule

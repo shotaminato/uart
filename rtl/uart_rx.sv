@@ -23,7 +23,7 @@ module uart_rx #(
     logic [11:0] cycle_cnt_next;
 
     assign cycle_cnt_next = cycle_cnt >= NUM_CYCLES_PER_SAMPLE - 1 ? '0 : 12'(cycle_cnt + 1);
-    `DFFR(cycle_cnt, cycle_cnt_next, 1'b1)
+    `DFFR(cycle_cnt, cycle_cnt_next, 1'b1, i_clk, i_rst_n)
 
     logic sample_valid;
     assign sample_valid = cycle_cnt == 0;
@@ -69,7 +69,7 @@ module uart_rx #(
     logic [$clog2(OVERSAMPLING_FACTOR * (DATA_WIDTH + 2))-1:0] rx_sample_count;
     logic [$clog2(OVERSAMPLING_FACTOR * (DATA_WIDTH + 2))-1:0] rx_sample_count_next;
     assign rx_sample_count_next = $clog2(OVERSAMPLING_FACTOR * (DATA_WIDTH + 2))'((rx_state == RECEIVE_BIT) ? rx_sample_count + 1 : 2);
-    `DFFR(rx_sample_count, rx_sample_count_next, sample_valid)
+    `DFFR(rx_sample_count, rx_sample_count_next, sample_valid, i_clk, i_rst_n)
 
     logic last_sample_received;
     assign last_sample_received = rx_sample_count == (OVERSAMPLING_FACTOR * (DATA_WIDTH + 2) - 1);
@@ -80,7 +80,7 @@ module uart_rx #(
         (rx_state == RECEIVE_BIT) ? ((sample_valid & last_sample_received ) ? STOP        : RECEIVE_BIT) :
         (rx_state == STOP       ) ? IDLE                                                                 : 
         IDLE;
-    `DFFR(rx_state, rx_state_next, sample_valid)
+    `DFFR(rx_state, rx_state_next, sample_valid, i_clk, i_rst_n)
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // RX Bit Received
@@ -97,9 +97,9 @@ module uart_rx #(
     assign start_bit_enable[1] = (rx_sample_count == (0 + OVERSAMPLING_FACTOR / 2    )) & sample_valid;
     assign start_bit_enable[2] = (rx_sample_count == (0 + OVERSAMPLING_FACTOR / 2 + 1)) & sample_valid;
 
-    `DFFR(start_bit[0], rx, start_bit_enable[0])
-    `DFFR(start_bit[1], rx, start_bit_enable[1])
-    `DFFR(start_bit[2], rx, start_bit_enable[2])
+    `DFFR(start_bit[0], rx, start_bit_enable[0], i_clk, i_rst_n)
+    `DFFR(start_bit[1], rx, start_bit_enable[1], i_clk, i_rst_n)
+    `DFFR(start_bit[2], rx, start_bit_enable[2], i_clk, i_rst_n)
 
     genvar g_bit;
     generate
@@ -108,9 +108,9 @@ module uart_rx #(
             assign data_bit_enable[g_bit][1] = (rx_sample_count == (((g_bit + 1) * OVERSAMPLING_FACTOR) + OVERSAMPLING_FACTOR / 2    )) & sample_valid;
             assign data_bit_enable[g_bit][2] = (rx_sample_count == (((g_bit + 1) * OVERSAMPLING_FACTOR) + OVERSAMPLING_FACTOR / 2 + 1)) & sample_valid;
 
-            `DFFR(data_bit[g_bit][0], rx, data_bit_enable[g_bit][0])
-            `DFFR(data_bit[g_bit][1], rx, data_bit_enable[g_bit][1])
-            `DFFR(data_bit[g_bit][2], rx, data_bit_enable[g_bit][2])
+            `DFFR(data_bit[g_bit][0], rx, data_bit_enable[g_bit][0], i_clk, i_rst_n)
+            `DFFR(data_bit[g_bit][1], rx, data_bit_enable[g_bit][1], i_clk, i_rst_n)
+            `DFFR(data_bit[g_bit][2], rx, data_bit_enable[g_bit][2], i_clk, i_rst_n)
         end
     endgenerate
 
@@ -118,9 +118,9 @@ module uart_rx #(
     assign end_bit_enable[1] = (rx_sample_count == ((DATA_WIDTH + 2) * OVERSAMPLING_FACTOR    )) & sample_valid;
     assign end_bit_enable[2] = (rx_sample_count == ((DATA_WIDTH + 2) * OVERSAMPLING_FACTOR + 1)) & sample_valid;
 
-    `DFFR(end_bit[0], rx, end_bit_enable[0])
-    `DFFR(end_bit[1], rx, end_bit_enable[1])
-    `DFFR(end_bit[2], rx, end_bit_enable[2])
+    `DFFR(end_bit[0], rx, end_bit_enable[0], i_clk, i_rst_n)
+    `DFFR(end_bit[1], rx, end_bit_enable[1], i_clk, i_rst_n)
+    `DFFR(end_bit[2], rx, end_bit_enable[2], i_clk, i_rst_n)
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // RX Bit Median
@@ -144,7 +144,7 @@ module uart_rx #(
         end
     endgenerate
 
-    `DFFR(data_bit_med, data_bit_med_next, sample_valid)
+    `DFFR(data_bit_med, data_bit_med_next, sample_valid, i_clk, i_rst_n)
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // FIFO

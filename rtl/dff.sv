@@ -20,9 +20,9 @@ module uart_dff #(
 endmodule
 
 
-`define DFFR(__q, __d, __en) \
-    always_ff @(posedge i_clk or negedge i_rst_n) begin \
-        if (!i_rst_n) begin \
+`define DFFR(__q, __d, __en, __clk, __rst_n) \
+    always_ff @(posedge __clk or negedge __rst_n) begin \
+        if (!__rst_n) begin \
             {__q} <= 0; \
         end else begin \
             if ({__en}) begin \

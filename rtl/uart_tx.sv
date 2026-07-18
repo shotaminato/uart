@@ -69,7 +69,7 @@ module uart_tx #(
     logic [DATA_WIDTH-1:0] tx_bit_valid_next;
 
     assign cycle_cnt_next = (tx_state == IDLE) || bit_valid ? '0 : 12'(cycle_cnt + 1);
-    `DFFR(cycle_cnt, cycle_cnt_next, 1'b1)
+    `DFFR(cycle_cnt, cycle_cnt_next, 1'b1, i_clk, i_rst_n)
 
     assign bit_valid = cycle_cnt == NUM_CYCLES_PER_BIT - 1;
 
@@ -86,15 +86,15 @@ module uart_tx #(
         ((tx_state == DATA ) & ~(bit_valid & tx_bit_valid[DATA_WIDTH-1])) |
         ((tx_state == STOP ) & ~bit_valid     );
 
-    `DFFR(tx_state, tx_state_next, ~tx_state_hold)
+    `DFFR(tx_state, tx_state_next, ~tx_state_hold, i_clk, i_rst_n)
 
     assign rx_fifo_rready = (tx_state == IDLE);
 
-    `DFFR(tx_data, rx_fifo_rdata, (tx_state == IDLE))
+    `DFFR(tx_data, rx_fifo_rdata, (tx_state == IDLE), i_clk, i_rst_n)
 
     assign tx_bit_valid_next = 
         (tx_state == DATA) ? (tx_bit_valid << 1) : DATA_WIDTH'(1);
-    `DFFR(tx_bit_valid, tx_bit_valid_next, bit_valid)
+    `DFFR(tx_bit_valid, tx_bit_valid_next, bit_valid, i_clk, i_rst_n)
 
     assign o_tx = 
         ((tx_state == IDLE ) & 1'b1                       ) |
