@@ -6,15 +6,31 @@ module uart2seg (
     output logic [6:0] o_seg
 );
 
+    localparam int MEM_SIZE = 1024;
+
     logic rst_n_meta;
     logic rst_n_sync;
     logic rx_meta;
     logic rx_sync;
     logic tx_meta;
     logic tx_sync;
-    logic       o_rvalid;
-    logic [7:0] o_rdata;
-    logic       i_rready;
+    logic       rx_o_rvalid;
+    logic [7:0] rx_o_rdata;
+    logic       rx_i_rready;
+
+    logic       tx_i_wvalid;
+    logic [7:0] tx_i_wdata;
+    logic       tx_o_wready;
+
+    logic [7:0] mem [MEM_SIZE];
+
+    logic [$clog2(MEM_SIZE):0] mem_ptr;
+    logic [$clog2(MEM_SIZE):0] mem_ptr_next;
+    logic mem_valid;
+
+    initial begin
+        $readmemb("tb/test.bin", mem);
+    end
 
     always_ff @(posedge i_clk or negedge i_rst_n) begin
         if (!i_rst_n) begin
@@ -47,30 +63,39 @@ module uart2seg (
     end
 
     uart_rx u_uart_rx (
-        .i_clk(i_clk),
-        .i_rst_n(rst_n_sync),
-        .i_rx(rx_sync),
-        .o_rdata(o_rdata),
-        .o_rvalid(o_rvalid),
-        .i_rready(i_rready)
+        .i_clk   (i_clk),
+        .i_rst_n (rst_n_sync),
+        .i_rx    (rx_sync),
+        .o_rdata (rx_o_rdata),
+        .o_rvalid(rx_o_rvalid),
+        .i_rready(rx_i_rready)
     );
 
+    assign mem_valid = mem_ptr < MEM_SIZE;
+
+    assign tx_i_wvalid = mem_valid | rx_o_rvalid;
+    assign tx_i_wdata  = mem_valid ? mem[mem_ptr] : rx_o_rdata;
+
+    assign mem_ptr_next = mem_valid & tx_o_wready ? mem_ptr + 1 : mem_ptr;
+
+    `DFFR(mem_ptr, mem_ptr_next, 1'b1, i_clk, rst_n_sync)
+
     uart_tx u_uart_tx (
-        .i_clk(i_clk),
-        .i_rst_n(rst_n_sync),
-        .o_tx(tx_meta),
-        .i_wdata(o_rdata),
-        .i_wvalid(o_rvalid),
-        .o_wready()
+        .i_clk   (i_clk),
+        .i_rst_n (rst_n_sync),
+        .o_tx    (tx_meta),
+        .i_wdata (tx_i_wdata),
+        .i_wvalid(tx_i_wvalid),
+        .o_wready(tx_o_wready)
     );
 
     char_7seg u_char_7seg (
-        .i_clk(i_clk),
-        .i_rst_n(rst_n_sync),
-        .i_valid(o_rvalid),
-        .i_char(o_rdata),
-        .o_seg(o_seg),
-        .o_ready(i_rready)
+        .i_clk  (i_clk),
+        .i_rst_n(rst_n_sync ),
+        .i_valid(rx_o_rvalid),
+        .i_char (rx_o_rdata ),
+        .o_seg  (o_seg      ),
+        .o_ready(rx_i_rready)
     );
 
 endmodule
