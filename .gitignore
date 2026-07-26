@@ -6,9 +6,9 @@ output_files
 .DS_Store
 .history
 
-simulation/questa/uart2seg.sft
-simulation/questa/uart2seg.svo
-uart2seg.qws
-c5_pin_model_dump.txt
+quartus
 tb/test.bin
 tb/test.txt
+
+deps
+Bender.lock
