@@ -29,7 +29,7 @@ module uart2seg (
     logic mem_valid;
 
     initial begin
-        $readmemb("tb/test.bin", mem);
+        $readmemb("../dv/bin/input.bin", mem);
     end
 
     always_ff @(posedge i_clk or negedge i_rst_n) begin
