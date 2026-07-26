@@ -1,0 +1,17 @@
+# A more detailed description of the manifest format `Bender.yml` can be found here:
+# https://github.com/pulp-platform/bender#manifest-format-benderyml
+
+package:
+  name: uart
+  authors:
+    - "ShotaMinato <tyuntune@gmail.com>"
+
+dependencies:
+  rtl_primitive: { git: "https://github.com/shotaminato/rtl_primitive.git", rev: "main" }
+
+sources:
+  - rtl/uart_rx.sv
+  - rtl/uart_tx.sv
+
+workspace:
+  checkout_dir: deps
