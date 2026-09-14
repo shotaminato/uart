@@ -12,6 +12,8 @@ dependencies:
 sources:
   - rtl/uart_rx.sv
   - rtl/uart_tx.sv
+  - rtl/axil_slave.sv
+  - rtl/uart_axil.sv
 
 workspace:
   checkout_dir: deps
