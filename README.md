@@ -39,7 +39,20 @@ Dependencies (`Bender.yml`): `rtl_primitive` at `deps/` (`fifo`, `DFFR` / `DFFR_
 
 ## LibreLane (sky130A)
 
-Checkout Bender deps, then run LibreLane with the design directory `librelane/` (`DESIGN_NAME: uart_axil`, `CLOCK_PERIOD: 20`, `USE_SLANG: true`):
+Checkout Bender deps, then run LibreLane with the design directory `librelane/` (`DESIGN_NAME: uart_axil`, `CLOCK_PERIOD: 20`, **`USE_SLANG: false`**). The classic Yosys frontend is required: slang does not expand `DFF` / `DFFR` / `DFFR_VAL` from `macro_pkg.sv` (unknown macro).
+
+`rtl_primitive` `pkg/macro_pkg.sv` must define those preprocessor macros **outside** any `package` (an empty `package macro_pkg; endpackage` may remain). After `bender checkout`, confirm `deps/rtl_primitive/pkg/macro_pkg.sv` looks like:
+
+```systemverilog
+`define DFF(...)
+`define DFFR(...)
+`define DFFR_VAL(...)
+
+package macro_pkg;
+endpackage
+```
+
+If `main` still nests the `` `define ``s inside the package, bump/checkout a `rtl_primitive` revision that moved them to file scope before synthesizing.
 
 ```bash
 bender checkout

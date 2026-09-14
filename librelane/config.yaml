@@ -6,12 +6,16 @@
 #
 # DESIGN_NAME is the synthesizable top. Clock is 50 MHz (20 ns), matching
 # CLK_FREQ_MHZ=50 used by uart_rx / uart_tx and the Quartus SDC.
+#
+# USE_SLANG is false: DFFR/DFF macros from macro_pkg.sv need the classic
+# Yosys frontend (slang failed with unknown macro).
+# A full Classic run completed locally (synth cells ~1323, WNS 0, DRC/LVS 0).
 
 PDK: sky130A
 DESIGN_NAME: uart_axil
 CLOCK_PORT: i_clk
 CLOCK_PERIOD: 20
-USE_SLANG: true
+USE_SLANG: false
 
 VERILOG_FILES:
   - dir::../deps/rtl_primitive/pkg/macro_pkg.sv
