@@ -103,56 +103,42 @@ module tb_uart_axil;
         output logic [1:0]  resp,
         input  int          aw_first
     );
-        logic aw_done;
-        logic w_done;
-        logic b_done;
-        aw_done = 1'b0;
-        w_done  = 1'b0;
-        b_done  = 1'b0;
-        resp    = 2'bxx;
+        resp = 2'b00;
 
         if (aw_first) begin
+            @(negedge i_clk);
+            i_awaddr  = addr;
+            i_awvalid = 1'b1;
             @(posedge i_clk);
-            i_awaddr  <= addr;
-            i_awvalid <= 1'b1;
+            @(negedge i_clk);
+            i_awvalid = 1'b0;
+            i_wdata   = data;
+            i_wstrb   = strb;
+            i_wvalid  = 1'b1;
             @(posedge i_clk);
-            while (!o_awready) @(posedge i_clk);
-            i_awvalid <= 1'b0;
-            aw_done = 1'b1;
-            @(posedge i_clk);
-            i_wdata  <= data;
-            i_wstrb  <= strb;
-            i_wvalid <= 1'b1;
-            @(posedge i_clk);
-            while (!o_wready) @(posedge i_clk);
-            i_wvalid <= 1'b0;
-            w_done = 1'b1;
+            @(negedge i_clk);
+            i_wvalid = 1'b0;
         end else begin
+            @(negedge i_clk);
+            i_wdata  = data;
+            i_wstrb  = strb;
+            i_wvalid = 1'b1;
             @(posedge i_clk);
-            i_wdata  <= data;
-            i_wstrb  <= strb;
-            i_wvalid <= 1'b1;
+            @(negedge i_clk);
+            i_wvalid  = 1'b0;
+            i_awaddr  = addr;
+            i_awvalid = 1'b1;
             @(posedge i_clk);
-            while (!o_wready) @(posedge i_clk);
-            i_wvalid <= 1'b0;
-            w_done = 1'b1;
-            @(posedge i_clk);
-            i_awaddr  <= addr;
-            i_awvalid <= 1'b1;
-            @(posedge i_clk);
-            while (!o_awready) @(posedge i_clk);
-            i_awvalid <= 1'b0;
-            aw_done = 1'b1;
+            @(negedge i_clk);
+            i_awvalid = 1'b0;
         end
 
-        while (!o_bvalid) @(posedge i_clk);
-        resp = o_bresp;
-        @(posedge i_clk);
-        b_done = 1'b1;
-        if (!aw_done || !w_done || !b_done) begin
-            $error("axil_write handshake incomplete");
+        if (!o_bvalid) begin
+            $display("FAIL BVALID missing after write");
             fail_count += 1;
         end
+        resp = o_bresp;
+        @(posedge i_clk);
     endtask
 
     task automatic axil_write_same(
@@ -161,17 +147,20 @@ module tb_uart_axil;
         input  logic [3:0]  strb,
         output logic [1:0]  resp
     );
+        @(negedge i_clk);
+        i_awaddr  = addr;
+        i_awvalid = 1'b1;
+        i_wdata   = data;
+        i_wstrb   = strb;
+        i_wvalid  = 1'b1;
         @(posedge i_clk);
-        i_awaddr  <= addr;
-        i_awvalid <= 1'b1;
-        i_wdata   <= data;
-        i_wstrb   <= strb;
-        i_wvalid  <= 1'b1;
-        @(posedge i_clk);
-        while (!(o_awready && o_wready)) @(posedge i_clk);
-        i_awvalid <= 1'b0;
-        i_wvalid  <= 1'b0;
-        while (!o_bvalid) @(posedge i_clk);
+        @(negedge i_clk);
+        i_awvalid = 1'b0;
+        i_wvalid  = 1'b0;
+        if (!o_bvalid) begin
+            $display("FAIL BVALID missing after same-cycle write");
+            fail_count += 1;
+        end
         resp = o_bresp;
         @(posedge i_clk);
     endtask
@@ -181,13 +170,16 @@ module tb_uart_axil;
         output logic [31:0] data,
         output logic [1:0]  resp
     );
+        @(negedge i_clk);
+        i_araddr  = addr;
+        i_arvalid = 1'b1;
         @(posedge i_clk);
-        i_araddr  <= addr;
-        i_arvalid <= 1'b1;
-        @(posedge i_clk);
-        while (!o_arready) @(posedge i_clk);
-        i_arvalid <= 1'b0;
-        while (!o_rvalid) @(posedge i_clk);
+        @(negedge i_clk);
+        i_arvalid = 1'b0;
+        if (!o_rvalid) begin
+            $display("FAIL RVALID missing after AR addr=0x%02x", addr);
+            fail_count += 1;
+        end
         data = o_rdata;
         resp = o_rresp;
         @(posedge i_clk);
@@ -201,32 +193,38 @@ module tb_uart_axil;
         output logic [31:0] data,
         output logic [1:0]  resp
     );
-        i_rready <= 1'b0;
+        @(negedge i_clk);
+        i_rready  = 1'b0;
+        i_araddr  = addr;
+        i_arvalid = 1'b1;
         @(posedge i_clk);
-        i_araddr  <= addr;
-        i_arvalid <= 1'b1;
-        @(posedge i_clk);
-        while (!o_arready) @(posedge i_clk);
-        i_arvalid <= 1'b0;
+        @(negedge i_clk);
+        i_arvalid = 1'b0;
+        if (!o_rvalid) begin
+            $display("FAIL RVALID missing during stalled R");
+            fail_count += 1;
+        end
         repeat (stall_cycles) @(posedge i_clk);
-        i_rready <= 1'b1;
-        while (!o_rvalid) @(posedge i_clk);
+        @(negedge i_clk);
         data = o_rdata;
         resp = o_rresp;
+        i_rready = 1'b1;
         @(posedge i_clk);
     endtask
 
     task automatic uart_send_byte(input logic [7:0] b);
         int unsigned i;
-        i_rx <= 1'b0;
+        @(negedge i_clk);
+        i_rx = 1'b0;
         repeat (CYCLES_PER_BIT) @(posedge i_clk);
         for (i = 0; i < 8; i++) begin
-            i_rx <= b[i];
+            @(negedge i_clk);
+            i_rx = b[i];
             repeat (CYCLES_PER_BIT) @(posedge i_clk);
         end
-        i_rx <= 1'b1;
+        @(negedge i_clk);
+        i_rx = 1'b1;
         repeat (CYCLES_PER_BIT) @(posedge i_clk);
-        // uart_rx needs extra sample time after STOP before FIFO push
         repeat (CYCLES_PER_BIT) @(posedge i_clk);
     endtask
 
@@ -236,7 +234,7 @@ module tb_uart_axil;
         input logic [31:0]  exp
     );
         if (got !== exp) begin
-            $error("%s: got 0x%08x expected 0x%08x", name, got, exp);
+            $display("FAIL %s: got 0x%08x expected 0x%08x", name, got, exp);
             fail_count += 1;
         end else begin
             $display("PASS %s = 0x%08x", name, got);
@@ -250,6 +248,7 @@ module tb_uart_axil;
         int unsigned n;
         fail_count = 0;
 
+        $display("tb_uart_axil: start");
         axil_idle();
         i_rst_n = 1'b0;
         i_rx    = 1'b1;
@@ -297,8 +296,9 @@ module tb_uart_axil;
         axil_write_same(ADDR_TXDATA, 32'h000000A5, 4'hF, resp);
         expect_eq("TXDATA BRESP", {30'b0, resp}, {30'b0, AXI_OKAY});
 
-        // Fill TX FIFO (depth 16): one already pushed, push 15 more, 17th ignored
-        for (n = 0; n < 15; n++) begin
+        // Fill TX FIFO (depth 16). uart_tx pops one byte into the shifter,
+        // so 1 + 16 writes are needed before TX_READY clears.
+        for (n = 0; n < 16; n++) begin
             axil_write_same(ADDR_TXDATA, 32'h00000010 + n, 4'hF, resp);
         end
         axil_read(ADDR_STATUS, status0, resp);
@@ -327,7 +327,7 @@ module tb_uart_axil;
             n += 1;
         end
         if (rdata[0] !== 1'b1) begin
-            $error("RX_VALID never set");
+            $display("FAIL RX_VALID never set");
             fail_count += 1;
         end else begin
             $display("PASS RX_VALID after two bytes (STATUS=0x%08x)", rdata);
@@ -356,7 +356,7 @@ module tb_uart_axil;
     end
 
     initial begin
-        #50_000_000;
+        #20_000_000;
         $fatal(1, "timeout");
     end
 

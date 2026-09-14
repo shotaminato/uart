@@ -52,7 +52,7 @@ Sources listed in `librelane/config.yaml` match the Quartus dependency set (`mac
 
 ```bash
 verilator --binary --timing -j 0 \
-  -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-WIDTHTRUNC -Wno-WIDTHEXPAND \
+  -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-WIDTHTRUNC -Wno-WIDTHEXPAND -Wno-INITIALDLY \
   deps/rtl_primitive/pkg/macro_pkg.sv \
   deps/rtl_primitive/rtl/fifo.sv \
   rtl/uart_tx.sv rtl/uart_rx.sv rtl/axil_slave.sv rtl/uart_axil.sv \
